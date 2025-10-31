@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+spec:
+  replicas: 1
+  selector:
+    # Este seletor ajuda o Deployment a encontrar quais Pods ele gerencia.
+    matchLabels:
+      app: nginx-proxy
+  template:
+    metadata:
+      # A label que será aplicada aos Pods criados.
+      labels:
+        app: nginx-proxy
+    spec:
+      containers:
+        - name: nginx-proxy
+          # o nome da imagem do nginx em especifico
+          image: nginx-proxy:latest
+          # Força o Kubernetes a usar a imagem que construímos localmente no Minikube.
+          imagePullPolicy: Never
+          ports:
+            # Expõe a porta 80 do container.
+            - containerPort: 80

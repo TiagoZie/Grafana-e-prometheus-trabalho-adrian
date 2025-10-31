@@ -1,0 +1,19 @@
+#sinceramente não faço a menor ideia o porque mas o meu talvez por ser linux precisou desses 3 rbacs para rodar, ele ficava dando um erro no prometheus que ele não achava a porta para coletar as metricas o chatgpt falou que era problema de permissão de não ver os pods
+# mas o do Lucas também é linux e não teve o mesmo problema, e isso já estava acontecendo em outra tentaiva que fiz, não sei o motivo do meu em especifico ter isso, talvez é um bloqueio da minha instalação ou distro
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+
+  name: prometheus-crb
+subjects:
+
+- kind: ServiceAccount
+
+  name: prometheus-sa
+  namespace: default
+roleRef:
+
+  kind: ClusterRole
+
+  name: prometheus-cr
+  apiGroup: rbac.authorization.k8s.io
