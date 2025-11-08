@@ -12,7 +12,7 @@ jobs:
   deploy:
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
-    environment: production # opcional: exige aprovação
+    environment: production
 
     steps:
       - name: Checkout
@@ -21,7 +21,7 @@ jobs:
       - name: Set vars
         id: vars
         run: |
-          echo "IMAGE=seuusuario/monitor" >> $GITHUB_OUTPUT
+          echo "IMAGE=tiagozie/monitor" >> $GITHUB_OUTPUT
           echo "TAG_SHA=${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
           echo "NAMESPACE=${{ secrets.K8S_NAMESPACE || 'default' }}" >> $GITHUB_OUTPUT
 
@@ -40,31 +40,43 @@ jobs:
           kubectl get ns ${{ steps.vars.outputs.NAMESPACE }} || \
           kubectl create ns ${{ steps.vars.outputs.NAMESPACE }}
 
-      # Aplica/garante os serviços/ingress/etc. estáticos (opcional na primeira vez)
-      - name: Apply base manifests (Service, Prometheus, Grafana, Nginx)
+      # 👉 Aplica todos os manifests base da pasta k8s
+      - name: Apply base manifests (RBAC, Prometheus, Grafana, Nginx)
         run: |
-          kubectl apply -n ${{ steps.vars.outputs.NAMESPACE }} -f k8s/service.yaml || true
-          kubectl apply -n ${{ steps.vars.outputs.NAMESPACE }} -f k8s/prometheus-deployment.yaml || true
-          kubectl apply -n ${{ steps.vars.outputs.NAMESPACE }} -f k8s/grafana-deployment.yaml || true
-          kubectl apply -n ${{ steps.vars.outputs.NAMESPACE }} -f k8s/nginx-deployment.yaml || true
+          kubectl apply -n ${{ steps.vars.outputs.NAMESPACE }} -f k8s/rbac-service-account.yml || true
+          kubectl apply -n ${{ steps.vars.outputs.NAMESPACE }} -f k8s/rbac-cluster-role.yml || true
+          kubectl apply -n ${{ steps.vars.outputs.NAMESPACE }} -f k8s/rbac-cluster-role-binding.yml || true
+
+          kubectl apply -n ${{ steps.vars.outputs.NAMESPACE }} -f k8s/prometheus-config.yml || true
+          kubectl apply -n ${{ steps.vars.outputs.NAMESPACE }} -f k8s/prometheus-deployment.yml || true
+          kubectl apply -n ${{ steps.vars.outputs.NAMESPACE }} -f k8s/prometheus-service.yml || true
+
+          kubectl apply -n ${{ steps.vars.outputs.NAMESPACE }} -f k8s/grafana-deployment.yml || true
+          kubectl apply -n ${{ steps.vars.outputs.NAMESPACE }} -f k8s/grafana-service.yml || true
+
+          kubectl apply -n ${{ steps.vars.outputs.NAMESPACE }} -f k8s/nginx-deployment.yml || true
           kubectl apply -n ${{ steps.vars.outputs.NAMESPACE }} -f k8s/nginx-service.yaml || true
-          kubectl apply -n ${{ steps.vars.outputs.NAMESPACE }} -f k8s/prometheus-config.yaml || true
 
-      # Aplica/garante o Deployment (se ainda não existir)
-      - name: Apply app deployment (first time)
+      # 👉 Aplica o app principal (Login)
+      - name: Apply app manifests
         run: |
-          kubectl apply -n ${{ steps.vars.outputs.NAMESPACE }} -f k8s/deployment.yaml
+          kubectl apply -n ${{ steps.vars.outputs.NAMESPACE }} -f k8s/app-deployment.yml
+          kubectl apply -n ${{ steps.vars.outputs.NAMESPACE }} -f k8s/app-service.yml
 
-      # Atualiza a imagem para a tag nova (idempotente)
-      - name: Set image to new tag
+      # 👉 Atualiza a imagem da aplicação (CI gera nova tag a cada push)
+      - name: Update app image
         run: |
-          kubectl set image deployment/monitor monitor=${{ steps.vars.outputs.IMAGE }}:${{ steps.vars.outputs.TAG_SHA }} -n ${{ steps.vars.outputs.NAMESPACE }}
+          kubectl set image deployment/app-deployment \
+            login-app=${{ steps.vars.outputs.IMAGE }}:${{ steps.vars.outputs.TAG_SHA }} \
+            -n ${{ steps.vars.outputs.NAMESPACE }}
 
-      - name: Wait rollout
+      - name: Wait for rollout
         run: |
-          kubectl rollout status deployment/monitor -n ${{ steps.vars.outputs.NAMESPACE }} --timeout=120s
+          kubectl rollout status deployment/app-deployment -n ${{ steps.vars.outputs.NAMESPACE }} --timeout=180s
 
-      - name: Show services (debug)
+      - name: Show resources for debug
         run: |
+          echo "=== SERVICES ==="
           kubectl get svc -n ${{ steps.vars.outputs.NAMESPACE }}
+          echo "=== PODS ==="
           kubectl get pods -o wide -n ${{ steps.vars.outputs.NAMESPACE }}
