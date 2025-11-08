@@ -42,7 +42,7 @@ jobs:
       - name: Definir variáveis da imagem
         id: vars
         run: |
-          echo "IMAGE=tiagozie/login-app:latest" >> $GITHUB_OUTPUT
+          echo "IMAGE=tiagozie/login-app" >> $GITHUB_OUTPUT
           echo "TAG_SHA=${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
 
       - name: Setup QEMU
