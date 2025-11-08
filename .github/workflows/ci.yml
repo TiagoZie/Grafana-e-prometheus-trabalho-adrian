@@ -67,4 +67,4 @@ jobs:
             ${{ steps.vars.outputs.IMAGE }}:latest
             ${{ steps.vars.outputs.IMAGE }}:${{ steps.vars.outputs.TAG_SHA }}
           cache-from: type=registry,ref=${{ steps.vars.outputs.IMAGE }}:buildcache
-          cache-to: ty
+          cache-to: type=registry,ref=${{ steps.vars.outputs.IMAGE }}:buildcache,mode=max
