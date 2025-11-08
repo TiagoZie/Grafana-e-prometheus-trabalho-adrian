@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: app-deployment
+  name: login-app
 spec:
   replicas: 1
   selector:
@@ -17,10 +17,22 @@ spec:
     spec:
       containers:
         - name: login-app
-          image: login-app:latest
-          imagePullPolicy: Never
+          image: tiagozie/login-app:latest
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 3000
           env:
+            - name: PORT
+              value: "3000"
+            - name: NODE_ENV
+              value: "production"
             - name: MONGO_URI
-              value: "mongodb+srv://TiagoTeste:killingmyself@trabalhosavulsos.rreh6wg.mongodb.net/"
+              valueFrom:
+                secretKeyRef:
+                  name: mongo-secret
+                  key: mongo_uri
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: jwt-secret
+                  key: jwt_secret

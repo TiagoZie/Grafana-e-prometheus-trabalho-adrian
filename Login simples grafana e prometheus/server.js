@@ -15,7 +15,7 @@ const PORT = process.env.PORT || 3000;
 const collectDefaultMetrics = client.collectDefaultMetrics;
 collectDefaultMetrics({ prefix: 'app_' }); // adiciona um prefixo para organizar melhor
 
-// Métrica original da aula
+// Métrica origin       al da aula
 const totalRequestsCounter = new client.Counter({
     name: 'total_requests',
     help: 'Contador de requisições totais'
