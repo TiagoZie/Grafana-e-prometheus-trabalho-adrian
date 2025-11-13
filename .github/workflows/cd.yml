@@ -39,6 +39,20 @@ jobs:
         run: |
           kubectl get ns ${{ steps.vars.outputs.NAMESPACE }} || \
           kubectl create ns ${{ steps.vars.outputs.NAMESPACE }}
+          
+      - name: Create secrets if not exists
+        run: |
+          # MongoDB
+          kubectl get secret mongo-secret -n ${{ steps.vars.outputs.NAMESPACE }} || \
+          kubectl create secret generic mongo-secret \
+            --from-literal=mongo_uri="${{ secrets.MONGO_URI }}" \
+            -n ${{ steps.vars.outputs.NAMESPACE }}
+
+          # JWT
+          kubectl get secret jwt-secret -n ${{ steps.vars.outputs.NAMESPACE }} || \
+          kubectl create secret generic jwt-secret \
+            --from-literal=jwt_secret="${{ secrets.JWT_SECRET }}" \
+            -n ${{ steps.vars.outputs.NAMESPACE }}
 
       # 👉 Aplica todos os manifests base da pasta k8s
       - name: Apply base manifests (RBAC, Prometheus, Grafana, Nginx)
