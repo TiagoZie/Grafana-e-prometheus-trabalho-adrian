@@ -21,7 +21,7 @@ jobs:
       - name: Set vars
         id: vars
         run: |
-          echo "IMAGE=tiagozie/monitor" >> $GITHUB_OUTPUT
+          echo "IMAGE=tiagozie/login-app" >> $GITHUB_OUTPUT
           echo "TAG_SHA=${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
           echo "NAMESPACE=${{ secrets.K8S_NAMESPACE || 'default' }}" >> $GITHUB_OUTPUT
 
@@ -39,7 +39,7 @@ jobs:
         run: |
           kubectl get ns ${{ steps.vars.outputs.NAMESPACE }} || \
           kubectl create ns ${{ steps.vars.outputs.NAMESPACE }}
-          
+
       - name: Create secrets if not exists
         run: |
           # MongoDB
